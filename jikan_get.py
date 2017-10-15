@@ -25,20 +25,20 @@ def jikanget(url_type, num_items, folder_name):
     count = 1
 
     while count <= num_items:
-    	url = url_type + str(id) + '/characters_staff'
-    	r = requests.get(url)
-    	print(r.status_code)
+        url = url_type + str(id) + '/characters_staff'
+        r = requests.get(url)
+        print(r.status_code)
 
         if r.status_code != 404:
             r = r.json()
             file_name = folder_name + '/' + str(id)
             print(file_name)
             if not os.path.exists(os.path.dirname(file_name)):
-            	try:
-                	os.makedirs(os.path.dirname(file_name))
-            	except OSError as exc:  # Guard against race condition
-        			if exc.errno != errno.EEXIST:
-        				raise
+                try:
+                    os.makedirs(os.path.dirname(file_name))
+                except OSError as exc:  # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
 
             with open(str(file_name), 'w') as outfile:
                 json.dump(r, outfile)
@@ -46,37 +46,49 @@ def jikanget(url_type, num_items, folder_name):
 
         id += 1
 
-def get_manga() :
+def get_manga():
 
-	id = 1
-	count = 1
-	num_items = 100
+    id = 1789
+    count = 41
+    num_items = 100
 
-	while count <= num_items:
+    while count <= num_items:
 
-		# get a manga based off of id
-		url = 'http://jikan.me/api/manga/' + str(id)
-		r = requests.get(url)
-		print(r.status_code)
+        # get a manga based off of id
+        url = 'http://jikan.me/api/manga/' + str(id) + '/characters_staff'
+        r = requests.get(url)
+        print(r.status_code)
+        print(id)
+        print(count)
+        add_outcome = 'FAILED'
 
-		if r.status_code != 404:
-			r = r.json()
-			if 'title' in data:
-				manga_name = r['title']
+        # if the page returns something
+        if r.status_code != 404:
+            r = r.json()
+            if 'title' in r:
+                manga_name = r['title']
 
-					# check to see if that manga's title matches any of the titles in anime
-					for filename in os.listdir('jikan_anime'):
-						with (filename) as datafile:
-							data = json.load(datafile)
-							if 'title' in data:
-								if data['title'] == manga_name:
-									with open(str(id), 'w') as outfile:
-										json.dump(r, outfile)
-									count += 1
-		id += 1
+                # check to see if that manga's title matches any of the titles in anime
+                for filename in os.listdir('jikan_anime'):
+                    with open('jikan_anime/' + filename) as datafile:
+                        data = json.load(datafile)
+                        if 'title' in data:
+                            if data['title'] == manga_name:
+                            	file_name = 'jikan_manga/' + str(id)
+                            	add_outcome = 'SUCCESS'
+                            	if not os.path.exists(os.path.dirname(file_name)):
+                					try:
+                						os.makedirs(os.path.dirname(file_name))
+                					except OSError as exc:  # Guard against race condition
+                						if exc.errno != errno.EEXIST:
+                							raise
+                                with open(file_name, 'w') as outfile:
+                                    json.dump(r, outfile)
+                                count += 1
+        id += 1
+        print(add_outcome)
+        print('')
 
-
-        		
 
 # ----
 # main
