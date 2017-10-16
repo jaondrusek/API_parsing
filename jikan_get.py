@@ -8,6 +8,7 @@ import json
 import os
 import errno
 import filecmp
+import re
 
 # -------
 # methods
@@ -60,12 +61,6 @@ def jikanget(url_type, num_items, folder_name, filter_porn=True):
         id += 1
 
 def get_matches(read_match, write_match, read_folder, write_folder, url_type, additional_data=''):
-
-	# highest manga id = 2034
-	# num manga = 41
-
-	# highest person id 220
-	# num people = 0
 
     id = 220
     count = 0
@@ -155,7 +150,6 @@ def get_matches_people(read_match, write_match, read_folder, write_folder, url_t
                 # check to see if that item's match field matches any of the titles in anime
                 # runs through all the files in the give folder
                 for readfile in os.listdir(read_folder):
-                    # print(readfile)
                     with open(read_folder + '/' + readfile) as datafile:
                         data = json.load(datafile)
 
@@ -163,9 +157,7 @@ def get_matches_people(read_match, write_match, read_folder, write_folder, url_t
                             if 'voice-actor' in character:
                                 for actor in character['voice-actor']:
                                     if 'url' in actor:
-                                        # print(actor['url'])
                                         if actor['url'] == match_data:
-                                            # print(data[read_match])
                                             # if the field matches between file
                                                 # name the file after it's id
                                             writefile = write_folder + '/' + str(id)
@@ -190,6 +182,78 @@ def get_matches_people(read_match, write_match, read_folder, write_folder, url_t
         print(add_outcome)
         print('')
 
+def get_matches_character(read_match, write_match, read_folder, write_folder, url_type, additional_data=''):
+
+    # highest manga id = 2034
+    # num manga = 41
+
+    # highest person id 220
+    # num people = 0
+
+    id = 127
+    count = 56
+    num_items = 100
+
+    while count <= num_items:
+        print('here 1')
+        # get a json page based off of id
+        url = url_type + str(id) + additional_data
+        print('here 2')
+        r = requests.get(url)
+        print(r.status_code)
+        print(id)
+        print(count)
+        add_outcome = 'FAILED'
+
+        # if the daily limit is not exceeded
+        if r.status_code == 429:
+            raise StopIteration
+
+        # if the page returns something
+        if r.status_code == 200:
+            # turn the json page into a dict
+            r = r.json()
+            if r != False:
+                # make sure our match field exists
+                if write_match in r:
+                    match_data = r[write_match]
+                    match_data = re.findall(r"[\w']+", match_data)
+                    match_set = set(match_data)
+                    print(match_set)
+                    # check to see if that item's match field matches any of the titles in anime
+                    # runs through all the files in the give folder
+                    for readfile in os.listdir(read_folder):
+                        with open(read_folder + '/' + readfile) as datafile:
+                            data = json.load(datafile)
+                            for character in data['character']:
+                                if 'name' in character:
+                                    char_name = re.findall(r"[\w']+", character['name'])
+                                    name_set = set(char_name)
+                                    if name_set == match_set:
+                                        # if the field matches between file
+                                            # name the file after it's id
+                                        writefile = write_folder + '/' + str(id)
+                                        # create the folder if it does not exist in this dir
+                                        if not os.path.exists(os.path.dirname(writefile)):
+                                            try:
+                                                os.makedirs(os.path.dirname(writefile))
+                                            except OSError as exc:  # Guard against race condition
+                                                if exc.errno != errno.EEXIST:
+                                                    raise
+                                        duplicate = False            
+                                        for file in os.listdir(write_folder):
+                                            if file == str(id):
+                                                duplicate = True
+                                        # write the file
+                                        if duplicate != True:
+                                            with open(writefile, 'w') as outfile:
+                                                json.dump(r, outfile)
+                                                add_outcome = 'SUCCESS'
+                                            count += 1
+        id += 1
+        print(add_outcome)
+        print('')
+
 
 # ----
 # main
@@ -201,7 +265,4 @@ if __name__ == "__main__":
 
     # jikanget('http://jikan.me/api/anime/', 100, 'jikan_anime', True)
     # get_matches('title', 'title', 'jikan_anime', 'jikan_manga', 'http://jikan.me/api/manga/', '/characters_staff')
-    get_matches_people('character', 'link-canonical', 'jikan_anime', 'jikan_person', 'http://jikan.me/api/person/')
-    # jikanget('http://jikan.me/api/manga/', 100, 'jikan_manga')    
-    # jikanget('http://jikan.me/api/character/', 100, 'jikan_character')
-    # jikanget('http://jikan.me/api/person/', 100, 'jikan_person')
+    get_matches_character('character', 'name', 'jikan_anime', 'jikan_character', 'http://jikan.me/api/character/')
