@@ -14,11 +14,9 @@ import re
 # methods
 # -------
 
-
 def test():
-    print("This is a test")
-    r = requests.get('https://api.github.com/events').json()
-    print(r)
+    tokenized = 'https://myanimelist.net/people/142/Takeshi_Aono'.split('/')
+    print(tokenized)
 
 
 def jikanget(url_type, num_items, folder_name, filter_porn=True):
@@ -60,7 +58,7 @@ def jikanget(url_type, num_items, folder_name, filter_porn=True):
 
         id += 1
 
-def get_matches(read_match, write_match, read_folder, write_folder, url_type, additional_data=''):
+def get_matches(read_match, write_match, read_folder, write_folder, url_type, *additional_data):
 
     id = 220
     count = 0
@@ -113,82 +111,46 @@ def get_matches(read_match, write_match, read_folder, write_folder, url_type, ad
         print(add_outcome)
         print('')
 
-def get_matches_people(read_match, write_match, read_folder, write_folder, url_type, additional_data=''):
+def get_matches_people(read_folder, write_folder, url_type):
 
-    # highest manga id = 2034
-    # num manga = 41
-
-    # highest person id 220
-    # num people = 0
-
-    id = 1
     count = 0
-    num_items = 100
 
-    while count <= num_items:
-
-        # get a json page based off of id
-        url = url_type + str(id) + additional_data
-        r = requests.get(url)
-        print(r.status_code)
-        print(id)
-        print(count)
-        add_outcome = 'FAILED'
-
-        # if the daily limit is not exceeded
-        if r.status_code == 429:
-            raise StopIteration
-
-        # if the page returns something
-        if r.status_code != 404:
-            # turn the json page into a dict
-            r = r.json()
-            # make sure our match field exists
-            if write_match in r:
-                match_data = r[write_match]
-                print(match_data)
-                # check to see if that item's match field matches any of the titles in anime
-                # runs through all the files in the give folder
-                for readfile in os.listdir(read_folder):
-                    with open(read_folder + '/' + readfile) as datafile:
-                        data = json.load(datafile)
-
-                        for character in data['character']:
+    for filename in os.listdir(read_folder):
+        found = False
+        with open(read_folder + '/' + filename) as datafile:
+            data = json.load(datafile)
+            if 'character' in data:
+                for character in data['character']:
+                    if 'role' in character:
+                        if character['role'] == 'Main':
                             if 'voice-actor' in character:
                                 for actor in character['voice-actor']:
-                                    if 'url' in actor:
-                                        if actor['url'] == match_data:
-                                            # if the field matches between file
-                                                # name the file after it's id
-                                            writefile = write_folder + '/' + str(id)
+                                    if actor['role'] == 'Japanese' and found != True:
+                                        if 'url' in actor:
+                                            tokenized_id = (actor['url'].split('/'))[4]
+                                            print(tokenized_id)
+
+                                            url = url_type + tokenized_id
+                                            r = requests.get(url).json()
+
+                                            file_name = write_folder + '/' + tokenized_id
                                             # create the folder if it does not exist in this dir
-                                            if not os.path.exists(os.path.dirname(writefile)):
+                                            if not os.path.exists(os.path.dirname(file_name)):
                                                 try:
-                                                    os.makedirs(os.path.dirname(writefile))
+                                                    os.makedirs(os.path.dirname(file_name))
                                                 except OSError as exc:  # Guard against race condition
                                                     if exc.errno != errno.EEXIST:
                                                         raise
-                                            duplicate = False            
-                                            for file in os.listdir(write_folder):
-                                                if file == str(id):
-                                                    duplicate = True
                                             # write the file
-                                            if duplicate != True:
-                                                with open(writefile, 'w') as outfile:
-                                                    json.dump(r, outfile)
-                                                    add_outcome = 'SUCCESS'
-                                                count += 1
-        id += 1
-        print(add_outcome)
-        print('')
+                                            with open(file_name, 'w') as outfile:
+                                                json.dump(r, outfile)
+                                                print(data['title'])
+                                                found = True
+                                            count += 1
+                                            print('Count: ' + str(count))
 
-def get_matches_character(read_match, write_match, read_folder, write_folder, url_type, additional_data=''):
 
-    # highest manga id = 2034
-    # num manga = 41
-
-    # highest person id 220
-    # num people = 0
+def get_matches_character(read_match, write_match, read_folder, write_folder, url_type, *additional_data):
 
     id = 127
     count = 56
@@ -262,7 +224,8 @@ def get_matches_character(read_match, write_match, read_folder, write_folder, ur
 if __name__ == "__main__":
     # titles used to match anime and manga
     # voice actor page links used to match anime and people
-
+    # test()
     # jikanget('http://jikan.me/api/anime/', 100, 'jikan_anime', True)
     # get_matches('title', 'title', 'jikan_anime', 'jikan_manga', 'http://jikan.me/api/manga/', '/characters_staff')
-    get_matches_character('character', 'name', 'jikan_anime', 'jikan_character', 'http://jikan.me/api/character/')
+    get_matches_people("jikan_anime", "jikan_person", 'http://jikan.me/api/person/')    
+    # get_matches_character('character', 'name', 'jikan_anime', 'jikan_character', 'http://jikan.me/api/character/')
