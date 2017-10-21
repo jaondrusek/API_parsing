@@ -14,6 +14,42 @@ import re
 # methods
 # -------
 
+# def test():
+#     url = 'http://jikan.me/api/anime/1/characters_staff'
+#     r = requests.get(url).json()
+#     for x in r:
+#         print(x)
+
+#     datafile = open('jikan_anime/1')
+#     data = json.load(datafile)
+#     print('Written file')
+#     dump(data)
+#     for x in data:
+#         print(x)
+
+
+# def dump(obj, nested_level=0, output=sys.stdout):
+#     spacing = '   '
+#     if type(obj) == dict:
+#         print >> output, '%s{' % ((nested_level) * spacing)
+#         for k, v in obj.items():
+#             if hasattr(v, '__iter__'):
+#                 print >> output, '%s%s:' % ((nested_level + 1) * spacing, k)
+#                 dump(v, nested_level + 1, output)
+#             else:
+#                 print >> output, '%s%s: %s' % ((nested_level + 1) * spacing, k, v)
+#         print >> output, '%s}' % (nested_level * spacing)
+#     elif type(obj) == list:
+#         print >> output, '%s[' % ((nested_level) * spacing)
+#         for v in obj:
+#             if hasattr(v, '__iter__'):
+#                 dump(v, nested_level + 1, output)
+#             else:
+#                 print >> output, '%s%s' % ((nested_level + 1) * spacing, v)
+#         print >> output, '%s]' % ((nested_level) * spacing)
+#     else:
+#         print >> output, '%s%s' % (nested_level * spacing, obj)
+
 # Counts the number of files in the given folder
 def count_files(folder):
     print len([name for name in os.listdir(folder) if os.path.isfile(os.path.join(folder, name))])
@@ -208,6 +244,8 @@ def get_matches_character(read_folder, write_folder, url_type):
 # ----
 
 if __name__ == "__main__":
+
+    # test()
 
     # count_files('jikan_anime')
 
