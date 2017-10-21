@@ -36,6 +36,7 @@ def get_anime_video() :
                                     add_outcome = 'SUCCESS'
                                     found = True
                 print(add_outcome)
+                print('')
 
 if __name__ == "__main__":
     get_anime_video()
