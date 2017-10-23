@@ -160,6 +160,57 @@ def get_matches(read_match, write_match, read_folder, write_folder, url_type, *a
         print(add_outcome)
         print('')
 
+def get_manga_matches():
+    count = 0
+    for filename in os.listdir('jikan_anime'):
+        read_file = 'jikan_anime/' + filename
+        with open(read_file) as datafile:
+            data = json.load(datafile)
+            print(filename)
+            if count < 100:
+                if 'related' in data:
+                    related = data['related']
+                    if 'Adaptation' in related:
+                        check_obj = related['Adaptation']
+                        if isinstance(check_obj[0], list):
+                            for list_obj in related['Adaptation']:
+                                # print(list_obj)
+                                tokens = list_obj[1].split('/')
+                                manga_id = tokens[2]
+                                # print('ID: ' + manga_id)
+                                r = requests.get('http://jikan.me/api/manga/' + manga_id).json()
+
+                                write_file = 'jikan_manga/' + manga_id
+                                if not os.path.exists(os.path.dirname(write_file)):
+                                    try:
+                                        os.makedirs(os.path.dirname(write_file))
+                                    except OSError as exc:  # Guard against race condition
+                                        if exc.errno != errno.EEXIST:
+                                            raise
+                                # write the file
+                                with open(write_file, 'w') as outfile:
+                                    json.dump(r, outfile)
+                                    print(r['title'])
+                                    count += 1
+                        else:
+                            manga = related['Adaptation']
+                            manga = manga[1].split('/')
+                            manga_id = manga[2]
+                            # print('ID: ' + manga_id)
+                            r = requests.get('http://jikan.me/api/manga/' + manga_id).json()
+                            write_file = 'jikan_manga/' + manga_id
+                            if not os.path.exists(os.path.dirname(write_file)):
+                                try:
+                                    os.makedirs(os.path.dirname(write_file))
+                                except OSError as exc:  # Guard against race condition
+                                    if exc.errno != errno.EEXIST:
+                                        raise
+                            # write the file
+                            with open(write_file, 'w') as outfile:
+                                json.dump(r, outfile)
+                                print(r['title'])
+                                count += 1
+
 # Runs through the anime we have locally, gets the first main character, gets the Japanese voice actor for that character
 # Limited to one per show
 def get_matches_people(read_folder, write_folder, url_type):
@@ -248,6 +299,8 @@ if __name__ == "__main__":
     # test()
 
     # count_files('jikan_anime')
+
+    get_manga_matches()
 
     # jikanget('http://jikan.me/api/anime/', 100, 'jikan_anime', True)
     # jikanget('http://jikan.me/api/manga/', 100, 'jikan_manga', True)
